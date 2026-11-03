@@ -1,0 +1,44 @@
+diff --git a/device.mk b/device.mk
+index 7679524..10e2b80 100644
+--- a/device.mk
++++ b/device.mk
+@@ -214,5 +214,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
+ PRODUCT_PROPERTY_OVERRIDES += \
+     ro.charger.enable_suspend=true
+ 
++# droidOS Core Applications & Services
++PRODUCT_PACKAGES += \
++    DroidControlPanel \
++    DroidAoaService \
++    DroidDesktop
++
+ # Get non-open-source specific aspects
+ $(call inherit-product, vendor/oppo/RMX1805/RMX1805-vendor.mk)
+diff --git a/overlay/frameworks/base/core/res/res/values/config.xml b/overlay/frameworks/base/core/res/res/values/config.xml
+index 62a7d24..fab55b5 100644
+--- a/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -599,4 +599,8 @@
+          fading edges is prohibitively expensive on most GPUs. -->
+     <bool name="config_ui_enableFadingMarquee">true</bool>
+ 
++    <!-- droidOS Desktop & Multi-Display Support -->
++    <bool name="config_freeformWindowManagement">true</bool>
++    <bool name="config_supportsMultiDisplay">true</bool>
++
+ </resources>
+diff --git a/system.prop b/system.prop
+index becde70..b0247d3 100644
+--- a/system.prop
++++ b/system.prop
+@@ -296,3 +296,10 @@ dalvik.vm.dex2oat-threads=8
+ dalvik.vm.image-dex2oat-cpu-set=0,1,2,3,4,5,6,7
+ dalvik.vm.image-dex2oat-filter=quicken
+ dalvik.vm.image-dex2oat-threads=8
++
++# droidOS Desktop Mode & Multi-Display
++persist.sys.freeform_window=true
++persist.sys.force_desktop_mode=true
++persist.sys.multi_display=true
++persist.sys.allow_multiple_res=true
++

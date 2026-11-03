@@ -1,0 +1,17 @@
+//
+// Copyright (C) 2026 droidOS Project
+//
+// DeX-Style Secondary Display Desktop Launcher & Taskbar
+//
+
+android_app {
+    name: "DroidDesktop",
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+    platform_apis: true,
+    certificate: "platform",
+    privileged: true,
+    optimize: {
+        enabled: false,
+    },
+}

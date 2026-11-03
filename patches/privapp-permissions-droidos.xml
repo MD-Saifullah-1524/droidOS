@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C) 2026 droidOS Project
+  ~
+  ~ Privileged permissions whitelist for droidOS system applications:
+  ~ - DroidControlPanel (Cockpit launcher & emergency console)
+  ~ - DroidAoaService (AOA 2.0 streaming & input injector daemon)
+  ~ - DroidDesktop (DeX-style secondary display launcher)
+  -->
+<permissions>
+    <privapp-permissions package="org.droidos.controlpanel">
+        <permission name="android.permission.BATTERY_STATS" />
+        <permission name="android.permission.HARDWARE_TEST" />
+        <permission name="android.permission.INJECT_EVENTS" />
+        <permission name="android.permission.MANAGE_ACTIVITY_TASKS" />
+        <permission name="android.permission.INTERACT_ACROSS_USERS" />
+        <permission name="android.permission.REBOOT" />
+        <permission name="android.permission.SHUTDOWN" />
+        <permission name="android.permission.DEVICE_POWER" />
+    </privapp-permissions>
+
+    <privapp-permissions package="org.droidos.aoaservice">
+        <permission name="android.permission.INJECT_EVENTS" />
+        <permission name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+        <permission name="android.permission.CAPTURE_VIDEO_OUTPUT" />
+        <permission name="android.permission.FOREGROUND_SERVICE" />
+        <permission name="android.permission.MANAGE_USB" />
+        <permission name="android.permission.CONTROL_VPN" />
+    </privapp-permissions>
+
+    <privapp-permissions package="org.droidos.desktop">
+        <permission name="android.permission.INJECT_EVENTS" />
+        <permission name="android.permission.MANAGE_ACTIVITY_TASKS" />
+        <permission name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+        <permission name="android.permission.PACKAGE_USAGE_STATS" />
+        <permission name="android.permission.QUERY_ALL_PACKAGES" />
+        <permission name="android.permission.EXPAND_STATUS_BAR" />
+        <permission name="android.permission.INTERACT_ACROSS_USERS" />
+    </privapp-permissions>
+</permissions>

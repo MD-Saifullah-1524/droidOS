@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.DroidOS.Desktop" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/desktop_bg</item>
+        <item name="android:statusBarColor">@color/desktop_bg</item>
+        <item name="android:navigationBarColor">@color/taskbar_bg</item>
+        <item name="android:textColorPrimary">@color/text_white</item>
+        <item name="android:textColorSecondary">@color/text_dim</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <style name="TaskbarButton">
+        <item name="android:textColor">@color/text_white</item>
+        <item name="android:background">@drawable/btn_taskbar_selector</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="DesktopIconText">
+        <item name="android:textColor">@color/text_white</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:shadowColor">#CC000000</item>
+        <item name="android:shadowDx">0</item>
+        <item name="android:shadowDy">1</item>
+        <item name="android:shadowRadius">3</item>
+    </style>
+</resources>

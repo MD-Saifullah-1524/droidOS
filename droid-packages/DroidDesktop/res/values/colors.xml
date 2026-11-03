@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="desktop_bg">#0F1117</color>
+    <color name="taskbar_bg">#D9141721</color>
+    <color name="taskbar_border">#2A3042</color>
+    <color name="start_menu_bg">#E6181C28</color>
+    <color name="start_menu_border">#333B50</color>
+    <color name="card_surface">#202534</color>
+    <color name="card_surface_hover">#2C3347</color>
+    <color name="accent_blue">#38BDF8</color>
+    <color name="accent_pill">#60A5FA</color>
+    <color name="text_white">#F8FAFC</color>
+    <color name="text_dim">#94A3B8</color>
+    <color name="text_muted">#64748B</color>
+</resources>

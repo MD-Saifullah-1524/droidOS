@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- Remote definition for GitHub -->
+  <remote name="github-rmx1805"
+          fetch="https://github.com" />
+
+  <!-- Realme 2 (RMX1805) Device Tree for LineageOS 18.1 -->
+  <project path="device/oppo/RMX1805"
+           name="RMX1805/device_oppo_RMX1805"
+           remote="github-rmx1805"
+           revision="lineage-18.1" />
+
+  <!-- Realme 2 (RMX1805) Vendor Blobs (contains vendor/oppo/RMX1805) -->
+  <project path="vendor/oppo"
+           name="RMX1805/vendor_oppo"
+           remote="github-rmx1805"
+           revision="lineage-18.1" />
+</manifest>

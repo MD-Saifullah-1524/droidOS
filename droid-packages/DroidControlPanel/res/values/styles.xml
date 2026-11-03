@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Monochrome Base Theme -->
+    <style name="Theme.DroidOS.Monochrome" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/bg_black</item>
+        <item name="android:statusBarColor">@color/bg_black</item>
+        <item name="android:navigationBarColor">@color/bg_black</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+    </style>
+
+    <!-- Typographic Card Style Base -->
+    <style name="Typography" />
+
+    <style name="Typography.Header">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:fontFamily">sans-serif-condensed-light</item>
+        <item name="android:letterSpacing">0.1</item>
+    </style>
+
+    <style name="Typography.Section">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:letterSpacing">0.2</item>
+    </style>
+
+    <style name="Typography.Value">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+    </style>
+
+    <style name="MonochromeButton">
+        <item name="android:textColor">@color/bg_black</item>
+        <item name="android:background">@drawable/btn_monochrome_solid</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:letterSpacing">0.15</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
+
+    <style name="MonochromeOutlinedButton">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:background">@drawable/btn_monochrome_outline</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:letterSpacing">0.15</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="desktop_app_name">droidOS Desktop</string>
+    <string name="search_apps_hint">Search apps and tools...</string>
+    <string name="start_btn_label">droidOS</string>
+    <string name="show_desktop">Show Desktop</string>
+    <string name="btn_disconnect">Disconnect Session</string>
+    <string name="btn_terminal">Terminal</string>
+    <string name="btn_files">Files</string>
+    <string name="btn_browser">Browser</string>
+    <string name="btn_settings">Settings</string>
+</resources>

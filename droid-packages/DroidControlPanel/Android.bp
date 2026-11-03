@@ -1,0 +1,17 @@
+//
+// Copyright (C) 2026 droidOS Project
+//
+// Minimalist Typographic Monochrome Control Panel & Launcher
+//
+
+android_app {
+    name: "DroidControlPanel",
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+    platform_apis: true,
+    certificate: "platform",
+    privileged: true,
+    optimize: {
+        enabled: false,
+    },
+}

@@ -1,0 +1,192 @@
+From 5b87653cb2ab5f6e40a61e322ffc2945ec4352ea Mon Sep 17 00:00:00 2001
+From: Cloud Agent <agent@droidos.local>
+Date: Tue, 3 Nov 2026 13:44:08 +0000
+Subject: [PATCH] droidOS: Add reverse tethering, power controls, rounded notch
+ cutout, and USB props
+
+---
+ BoardConfig.mk                                |  3 +-
+ device.mk                                     | 11 ++++-
+ .../base/core/res/res/values/config.xml       | 11 +++--
+ permissions/privapp-permissions-droidos.xml   | 40 +++++++++++++++++++
+ releasetools.py                               |  1 +
+ system.prop                                   | 17 ++++++++
+ 6 files changed, 77 insertions(+), 6 deletions(-)
+ create mode 100644 permissions/privapp-permissions-droidos.xml
+
+diff --git a/BoardConfig.mk b/BoardConfig.mk
+index e94ce8a..84cc785 100644
+--- a/BoardConfig.mk
++++ b/BoardConfig.mk
+@@ -77,7 +77,7 @@ DEVICE_MATRIX_FILE := $(DEVICE_PATH)/compatibility_matrix.xml
+ 
+ # Kernel
+ BOARD_KERNEL_BASE := 0x80000000
+-BOARD_KERNEL_CMDLINE := console=ttyMSM0,115200,n8androidboot.console=ttyMSM0 androidboot.hardware=qcom msm_rtb.filter=0x237 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 androidboot.bootdevice=7824900.sdhci earlycon=msm_serial_dm,0x78af000 firmware_class.path=/vendor/firmware_mnt/image androidboot.usbconfigfs=true loop.max_part=7
++BOARD_KERNEL_CMDLINE := console=ttyMSM0,115200,n8 androidboot.console=ttyMSM0 androidboot.hardware=qcom msm_rtb.filter=0x237 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 androidboot.bootdevice=7824900.sdhci earlycon=msm_serial_dm,0x78af000 firmware_class.path=/vendor/firmware_mnt/image androidboot.usbconfigfs=true loop.max_part=7
+ BOARD_KERNEL_CMDLINE += androidboot.selinux=permissive
+ BOARD_KERNEL_IMAGE_NAME := Image
+ BOARD_KERNEL_PAGESIZE :=  2048
+@@ -106,6 +106,7 @@ BOARD_USES_QCOM_HARDWARE := true
+ 
+ # Recovery
+ TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.qcom
++TARGET_RELEASETOOLS_EXTENSIONS := $(DEVICE_PATH)
+ 
+ # System-as-root
+ BOARD_BUILD_SYSTEM_ROOT_IMAGE := true
+diff --git a/device.mk b/device.mk
+index 7679524..c501455 100644
+--- a/device.mk
++++ b/device.mk
+@@ -129,7 +129,7 @@ PRODUCT_COPY_FILES += \
+     frameworks/native/data/etc/android.hardware.sensor.proximity.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/android.hardware.sensor.proximity.xml \
+     frameworks/native/data/etc/android.hardware.usb.host.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/android.hardware.usb.host.xml \
+     frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
+-    frameworks/native/data/etc/android.hardware.usb.accessory.xml:$(TARGET_COPY_OUT_SYATEM)/etc/permissions/android.hardware.usb.accessory.xml \
++    frameworks/native/data/etc/android.hardware.usb.accessory.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/android.hardware.usb.accessory.xml \
+     frameworks/native/data/etc/android.hardware.telephony.cdma.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/android.hardware.telephony.cdma.xml \
+     frameworks/native/data/etc/android.hardware.telephony.gsm.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/android.hardware.telephony.gsm.xml \
+     frameworks/native/data/etc/android.software.sip.voip.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/android.software.sip.voip.xml \
+@@ -138,9 +138,10 @@ PRODUCT_COPY_FILES += \
+ # Properties
+ PRODUCT_COMPATIBLE_PROPERTY_OVERRIDE := true
+ 
+-# QCOM
++# QCOM & droidOS Permissions
+ PRODUCT_COPY_FILES += \
+     $(LOCAL_PATH)/permissions/privapp-permissions-qti.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/privapp-permissions-qti.xml \
++    $(LOCAL_PATH)/permissions/privapp-permissions-droidos.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/privapp-permissions-droidos.xml \
+     $(LOCAL_PATH)/permissions/qti_whitelist.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/sysconfig/qti_whitelist.xml
+ 
+ # RIl
+@@ -214,5 +215,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
+ PRODUCT_PROPERTY_OVERRIDES += \
+     ro.charger.enable_suspend=true
+ 
++# droidOS Core Applications & Services
++PRODUCT_PACKAGES += \
++    DroidControlPanel \
++    DroidAoaService \
++    DroidDesktop
++
+ # Get non-open-source specific aspects
+ $(call inherit-product, vendor/oppo/RMX1805/RMX1805-vendor.mk)
+diff --git a/overlay/frameworks/base/core/res/res/values/config.xml b/overlay/frameworks/base/core/res/res/values/config.xml
+index 62a7d24..489c37d 100644
+--- a/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -238,8 +238,8 @@
+     <!-- The restoring is handled by modem if it is true-->
+      <bool name="skip_restoring_network_selection">true</bool>
+ 
+-    <!-- Height of the status bar -->
+-     <dimen name="status_bar_height_portrait">28dp</dimen>
++    <!-- Height of the status bar (aligned to 80px / 40dp physical notch height at 320dpi) -->
++     <dimen name="status_bar_height_portrait">40dp</dimen>
+ 
+     <!-- The maximum range of gamma adjustment possible using the screen
+          auto-brightness adjustment setting. -->
+@@ -351,7 +351,8 @@
+          appended after the path string to interpret coordinates in dp instead of px units.
+          Note that a physical cutout should be configured in pixels for the best results.
+     -->
+-     <string name="config_mainBuiltInDisplayCutout">M -132,0 L -132,53 L 132,53 L 132,0 Z</string>
++     <string name="config_mainBuiltInDisplayCutout">M -135,0 L -135,62 A 18,18 0 0,0 -117,80 L 117,80 A 18,18 0 0,0 135,62 L 135,0 Z</string>
++     <string name="config_mainBuiltInDisplayCutoutRectApproximation">M -135,0 L -135,80 L 135,80 L 135,0 Z</string>
+ 
+     <!-- MMS user agent string -->
+      <string name="config_mms_user_agent">Android-Mms/2.0</string>
+@@ -599,4 +600,8 @@
+          fading edges is prohibitively expensive on most GPUs. -->
+     <bool name="config_ui_enableFadingMarquee">true</bool>
+ 
++    <!-- droidOS Desktop & Multi-Display Support -->
++    <bool name="config_freeformWindowManagement">true</bool>
++    <bool name="config_supportsMultiDisplay">true</bool>
++
+ </resources>
+diff --git a/permissions/privapp-permissions-droidos.xml b/permissions/privapp-permissions-droidos.xml
+new file mode 100644
+index 0000000..2dd5c65
+--- /dev/null
++++ b/permissions/privapp-permissions-droidos.xml
+@@ -0,0 +1,40 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++  ~ Copyright (C) 2026 droidOS Project
++  ~
++  ~ Privileged permissions whitelist for droidOS system applications:
++  ~ - DroidControlPanel (Cockpit launcher & emergency console)
++  ~ - DroidAoaService (AOA 2.0 streaming & input injector daemon)
++  ~ - DroidDesktop (DeX-style secondary display launcher)
++  -->
++<permissions>
++    <privapp-permissions package="org.droidos.controlpanel">
++        <permission name="android.permission.BATTERY_STATS" />
++        <permission name="android.permission.HARDWARE_TEST" />
++        <permission name="android.permission.INJECT_EVENTS" />
++        <permission name="android.permission.MANAGE_ACTIVITY_TASKS" />
++        <permission name="android.permission.INTERACT_ACROSS_USERS" />
++        <permission name="android.permission.REBOOT" />
++        <permission name="android.permission.SHUTDOWN" />
++        <permission name="android.permission.DEVICE_POWER" />
++    </privapp-permissions>
++
++    <privapp-permissions package="org.droidos.aoaservice">
++        <permission name="android.permission.INJECT_EVENTS" />
++        <permission name="android.permission.INTERNAL_SYSTEM_WINDOW" />
++        <permission name="android.permission.CAPTURE_VIDEO_OUTPUT" />
++        <permission name="android.permission.FOREGROUND_SERVICE" />
++        <permission name="android.permission.MANAGE_USB" />
++        <permission name="android.permission.CONTROL_VPN" />
++    </privapp-permissions>
++
++    <privapp-permissions package="org.droidos.desktop">
++        <permission name="android.permission.INJECT_EVENTS" />
++        <permission name="android.permission.MANAGE_ACTIVITY_TASKS" />
++        <permission name="android.permission.INTERNAL_SYSTEM_WINDOW" />
++        <permission name="android.permission.PACKAGE_USAGE_STATS" />
++        <permission name="android.permission.QUERY_ALL_PACKAGES" />
++        <permission name="android.permission.EXPAND_STATUS_BAR" />
++        <permission name="android.permission.INTERACT_ACROSS_USERS" />
++    </privapp-permissions>
++</permissions>
+diff --git a/releasetools.py b/releasetools.py
+index 19d45f0..ff1054f 100644
+--- a/releasetools.py
++++ b/releasetools.py
+@@ -38,4 +38,5 @@ def AddImage(info, basename, dest):
+ 
+ def OTA_InstallEnd(info):
+   AddImage(info, "vbmeta.img", "/dev/block/bootdevice/by-name/vbmeta")
++  AddImage(info, "dtbo.img", "/dev/block/bootdevice/by-name/dtbo")
+   return
+diff --git a/system.prop b/system.prop
+index becde70..b59f719 100644
+--- a/system.prop
++++ b/system.prop
+@@ -296,3 +296,20 @@ dalvik.vm.dex2oat-threads=8
+ dalvik.vm.image-dex2oat-cpu-set=0,1,2,3,4,5,6,7
+ dalvik.vm.image-dex2oat-filter=quicken
+ dalvik.vm.image-dex2oat-threads=8
++
++# droidOS Desktop Mode & Multi-Display
++persist.sys.freeform_window=true
++persist.sys.force_desktop_mode=true
++persist.sys.multi_display=true
++persist.sys.allow_multiple_res=true
++
++# Privapp permission fallback (prevent RescueParty halts)
++ro.control_privapp_permissions=log
++
++# Display Density (Default UI scaling for 6.2" 720x1520 display)
++ro.sf.lcd_density=320
++
++# USB Controller (Enables dynamic USB configuration switching in Settings/SystemUI)
++sys.usb.controller=7000000.dwc3
++vendor.usb.controller=7000000.dwc3
++
+-- 
+2.47.3
+

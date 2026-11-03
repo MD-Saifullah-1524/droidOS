@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">droidOS</string>
+    <string name="title_system">SYSTEM TELEMETRY</string>
+    <string name="title_desktop">DESKTOP ENGINE</string>
+    <string name="title_companion">COMPANION INPUT</string>
+    <string name="btn_start_desktop">LAUNCH DESKTOP</string>
+    <string name="btn_stop_desktop">STOP DESKTOP</string>
+    <string name="btn_open_trackpad">OPEN TRACKPAD</string>
+    <string name="status_disconnected">USB DISCONNECTED</string>
+    <string name="status_connected">USB CONNECTED (AWAITING AOA)</string>
+    <string name="status_streaming">AOA DESKTOP STREAMING</string>
+
+    <string name="title_power">SYSTEM CONTROL</string>
+    <string name="title_quick_settings">QUICK CONTROLS</string>
+    <string name="btn_lockdown">INSTANT LOCKDOWN</string>
+    <string name="btn_reboot_menu">ADVANCED REBOOT</string>
+    <string name="btn_reboot_system">REBOOT SYSTEM</string>
+    <string name="btn_reboot_recovery">RECOVERY</string>
+    <string name="btn_reboot_bootloader">BOOTLOADER</string>
+    <string name="btn_power_off">SHUTDOWN</string>
+    <string name="btn_toggle_torch">TORCH</string>
+    <string name="btn_toggle_wifi">WI-FI</string>
+</resources>

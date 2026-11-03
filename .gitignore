@@ -1,0 +1,24 @@
+# LineageOS / AOSP source tree (managed separately via repo tool)
+lineage/
+
+# Compiler cache and logs
+.ccache/
+build.log
+*.log
+
+# Staged build artifacts and ROM packages
+serve/
+out/
+*.zip
+*.img
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*~

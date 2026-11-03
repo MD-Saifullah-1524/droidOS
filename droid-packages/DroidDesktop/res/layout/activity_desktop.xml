@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/desktop_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/desktop_bg">
+
+    <!-- Desktop Workspace Canvas -->
+    <LinearLayout
+        android:id="@+id/desktop_canvas"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginBottom="48dp"
+        android:padding="24dp">
+
+        <!-- Desktop Icon Grid (Left Aligned Column/Grid) -->
+        <GridLayout
+            android:id="@+id/desktop_grid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:columnCount="1"
+            android:orientation="vertical"
+            android:alignmentMode="alignMargins"
+            android:useDefaultMargins="true">
+
+            <!-- Pinned Desktop Shortcut: Files -->
+            <LinearLayout
+                android:id="@+id/icon_files"
+                android:layout_width="80dp"
+                android:layout_height="90dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/btn_taskbar_selector"
+                android:focusable="true"
+                android:clickable="true">
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_menu_agenda"
+                    android:tint="@color/text_white" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Files"
+                    style="@style/DesktopIconText"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- Pinned Desktop Shortcut: Browser -->
+            <LinearLayout
+                android:id="@+id/icon_browser"
+                android:layout_width="80dp"
+                android:layout_height="90dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/btn_taskbar_selector"
+                android:focusable="true"
+                android:clickable="true">
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    android:tint="@color/text_white" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Browser"
+                    style="@style/DesktopIconText"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- Pinned Desktop Shortcut: Terminal -->
+            <LinearLayout
+                android:id="@+id/icon_terminal"
+                android:layout_width="80dp"
+                android:layout_height="90dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/btn_taskbar_selector"
+                android:focusable="true"
+                android:clickable="true">
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_menu_edit"
+                    android:tint="@color/text_white" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Terminal"
+                    style="@style/DesktopIconText"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- Pinned Desktop Shortcut: Settings -->
+            <LinearLayout
+                android:id="@+id/icon_settings"
+                android:layout_width="80dp"
+                android:layout_height="90dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/btn_taskbar_selector"
+                android:focusable="true"
+                android:clickable="true">
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_menu_preferences"
+                    android:tint="@color/text_white" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Settings"
+                    style="@style/DesktopIconText"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+        </GridLayout>
+
+    </LinearLayout>
+
+    <!-- Start Menu Drawer Popup (Hidden by default, overlays above taskbar) -->
+    <LinearLayout
+        android:id="@+id/start_menu_container"
+        android:layout_width="420dp"
+        android:layout_height="480dp"
+        android:layout_gravity="bottom|start"
+        android:layout_marginBottom="54dp"
+        android:layout_marginStart="12dp"
+        android:background="@drawable/bg_start_menu"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone"
+        android:elevation="12dp">
+
+        <!-- Search Bar -->
+        <EditText
+            android:id="@+id/et_search_apps"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="#252A3A"
+            android:hint="@string/search_apps_hint"
+            android:textColorHint="@color/text_muted"
+            android:textColor="@color/text_white"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:textSize="13sp"
+            android:layout_marginBottom="12dp"
+            android:singleLine="true" />
+
+        <!-- All Apps Grid -->
+        <GridView
+            android:id="@+id/gv_start_apps"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:numColumns="4"
+            android:verticalSpacing="8dp"
+            android:horizontalSpacing="8dp"
+            android:stretchMode="columnWidth"
+            android:gravity="center" />
+
+        <!-- Start Menu Bottom Quick Actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/btn_disconnect_desktop"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="Disconnect"
+                style="@style/TaskbarButton"
+                android:textColor="#F87171"
+                android:textSize="11sp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="droidOS v1.0"
+                android:textColor="@color/text_muted"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Bottom Taskbar Dock (DeX / Windows style) -->
+    <LinearLayout
+        android:id="@+id/taskbar"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_taskbar"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+
+        <!-- Start Menu Button -->
+        <LinearLayout
+            android:id="@+id/btn_start"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/btn_taskbar_selector"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_dialog_dialer"
+                android:tint="@color/accent_blue"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/start_btn_label"
+                android:textColor="@color/text_white"
+                android:textStyle="bold"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="24dp"
+            android:background="@color/taskbar_border"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp" />
+
+        <!-- Running / Pinned Apps Container -->
+        <HorizontalScrollView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/running_tasks_container"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical" />
+        </HorizontalScrollView>
+
+        <!-- System Tray -->
+        <LinearLayout
+            android:id="@+id/system_tray"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Battery -->
+            <TextView
+                android:id="@+id/tray_battery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="100%"
+                android:textColor="@color/text_dim"
+                android:textSize="12sp"
+                android:layout_marginEnd="12dp" />
+
+            <!-- Clock -->
+            <TextView
+                android:id="@+id/tray_clock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12:00"
+                android:textColor="@color/text_white"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Show Desktop / Minimize All Strip -->
+            <View
+                android:id="@+id/btn_show_desktop"
+                android:layout_width="6dp"
+                android:layout_height="match_parent"
+                android:background="@drawable/btn_taskbar_selector"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

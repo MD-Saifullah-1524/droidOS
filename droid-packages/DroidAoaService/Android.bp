@@ -1,0 +1,17 @@
+//
+// Copyright (C) 2026 droidOS Project
+//
+// Background AOA USB Accessory, VirtualDisplay Streamer & Input Injector
+//
+
+android_app {
+    name: "DroidAoaService",
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+    platform_apis: true,
+    certificate: "platform",
+    privileged: true,
+    optimize: {
+        enabled: false,
+    },
+}

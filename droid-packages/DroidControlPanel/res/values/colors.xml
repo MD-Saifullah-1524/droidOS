@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Monochrome Palette -->
+    <color name="bg_black">#000000</color>
+    <color name="surface_dark">#121212</color>
+    <color name="surface_card">#181818</color>
+    <color name="border_line">#333333</color>
+    <color name="border_active">#FFFFFF</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#9E9E9E</color>
+    <color name="text_disabled">#555555</color>
+    <color name="accent_white">#FFFFFF</color>
+</resources>

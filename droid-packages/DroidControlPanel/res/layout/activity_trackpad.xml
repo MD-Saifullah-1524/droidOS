@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_black"
+    android:padding="16dp">
+
+    <!-- Top Status Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="TRACKPAD // COMPANION"
+            style="@style/Typography.Section" />
+
+        <Button
+            android:id="@+id/btn_close_trackpad"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="EXIT"
+            style="@style/MonochromeOutlinedButton"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- Large Touch Surface -->
+    <FrameLayout
+        android:id="@+id/touch_surface"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/trackpad_border"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="SWIPE TO MOVE // TAP TO CLICK\nTWO FINGERS TO SCROLL"
+            android:gravity="center"
+            style="@style/Typography.Section"
+            android:textColor="@color/text_disabled" />
+    </FrameLayout>
+
+    <!-- Bottom Buttons: Left & Right Click -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_left_click"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:text="L-CLICK"
+            style="@style/MonochromeOutlinedButton"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/btn_right_click"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="R-CLICK"
+            style="@style/MonochromeOutlinedButton" />
+    </LinearLayout>
+
+</LinearLayout>
