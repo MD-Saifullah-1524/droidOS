@@ -18,8 +18,12 @@
         android:label="droidOS AOA Engine"
         android:persistent="true">
 
-        <service
-            android:name=".AoaAccessoryService"
+        <!-- Transparent trampoline activity matching USB accessory attachment -->
+        <activity
+            android:name=".UsbAccessoryActivity"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
@@ -27,8 +31,14 @@
             <meta-data
                 android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
                 android:resource="@xml/accessory_filter" />
-        </service>
+        </activity>
 
+        <!-- Background AOA streaming & input injection engine -->
+        <service
+            android:name=".AoaAccessoryService"
+            android:exported="true" />
+
+        <!-- Reverse tethering VPN service -->
         <service
             android:name=".ReverseTetherService"
             android:permission="android.permission.BIND_VPN_SERVICE"

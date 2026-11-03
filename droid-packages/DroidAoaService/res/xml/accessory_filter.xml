@@ -2,6 +2,9 @@
 <resources>
     <usb-accessory
         manufacturer="droidOS"
-        model="droidOS Desktop"
-        version="1.0" />
+        model="droidOS Desktop" />
+    <usb-accessory
+        manufacturer="droidOS" />
+    <usb-accessory
+        manufacturer="DroidLink" />
 </resources>
