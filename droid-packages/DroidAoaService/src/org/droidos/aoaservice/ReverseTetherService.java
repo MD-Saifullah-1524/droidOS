@@ -27,8 +27,12 @@ public class ReverseTetherService extends VpnService {
 
     public static synchronized void start(Context context, OutputStream usbOut) {
         sUsbOutputStream = usbOut;
-        Intent intent = new Intent(context, ReverseTetherService.class);
-        context.startService(intent);
+        try {
+            Intent intent = new Intent(context, ReverseTetherService.class);
+            context.startService(intent);
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to start ReverseTetherService: " + t.getMessage());
+        }
     }
 
     public static synchronized void stop(Context context) {
@@ -61,6 +65,12 @@ public class ReverseTetherService extends VpnService {
         if (mIsRunning) return;
 
         try {
+            Intent prepareIntent = VpnService.prepare(this);
+            if (prepareIntent != null) {
+                Log.w(TAG, "VPN permission consent required before establishing reverse tether");
+                return;
+            }
+
             Log.i(TAG, "Configuring droidOS Reverse Tether VPN interface...");
             Builder builder = new Builder();
             builder.setSession("droidOS USB Reverse Tether")
@@ -89,8 +99,8 @@ public class ReverseTetherService extends VpnService {
             mOutgoingThread.start();
 
             Log.i(TAG, "Reverse Tether VPN active. Outbound traffic now routed via USB to host.");
-        } catch (Exception e) {
-            Log.e(TAG, "Error starting Reverse Tether VPN", e);
+        } catch (Throwable e) {
+            Log.e(TAG, "Error starting Reverse Tether VPN: " + e.getMessage());
             stopVpn();
         }
     }

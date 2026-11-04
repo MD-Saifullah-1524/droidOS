@@ -37,56 +37,79 @@ public class AoaAccessoryService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
-        mDisplayStreamer = new DisplayStreamer(this);
-        mInputBridge = new InputEventBridge();
-        createNotificationChannel();
+        try {
+            mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+            mDisplayStreamer = new DisplayStreamer(this);
+            mInputBridge = new InputEventBridge();
+            createNotificationChannel();
+        } catch (Throwable t) {
+            Log.e(TAG, "Error in onCreate: " + t.getMessage(), t);
+        }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        startForeground(NOTIF_ID, buildNotification("Awaiting USB Accessory connection..."));
+        try {
+            startForeground(NOTIF_ID, buildNotification("Awaiting USB Accessory connection..."));
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to startForeground: " + t.getMessage());
+        }
 
-        if (intent != null && intent.hasExtra(UsbManager.EXTRA_ACCESSORY)) {
-            UsbAccessory accessory = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
-            openAccessory(accessory);
-        } else {
-            // Check connected accessories
-            UsbAccessory[] accessories = mUsbManager.getAccessoryList();
-            if (accessories != null && accessories.length > 0) {
-                openAccessory(accessories[0]);
+        try {
+            if (intent != null && intent.hasExtra(UsbManager.EXTRA_ACCESSORY)) {
+                UsbAccessory accessory = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+                openAccessory(accessory);
+            } else {
+                // Check connected accessories
+                UsbAccessory[] accessories = mUsbManager.getAccessoryList();
+                if (accessories != null && accessories.length > 0) {
+                    openAccessory(accessories[0]);
+                }
             }
+        } catch (Throwable t) {
+            Log.e(TAG, "Error in onStartCommand: " + t.getMessage(), t);
         }
 
         return START_STICKY;
     }
 
-    private void openAccessory(UsbAccessory accessory) {
+    private synchronized void openAccessory(UsbAccessory accessory) {
         if (accessory == null) return;
 
-        Log.i(TAG, "Opening accessory: " + accessory.getModel() + " by " + accessory.getManufacturer());
-        mFileDescriptor = mUsbManager.openAccessory(accessory);
-        if (mFileDescriptor == null) {
-            Log.e(TAG, "Failed to open UsbAccessory file descriptor");
-            return;
+        try {
+            Log.i(TAG, "Opening accessory: " + accessory.getModel() + " by " + accessory.getManufacturer());
+            mFileDescriptor = mUsbManager.openAccessory(accessory);
+            if (mFileDescriptor == null) {
+                Log.e(TAG, "Failed to open UsbAccessory file descriptor");
+                return;
+            }
+
+            FileDescriptor fd = mFileDescriptor.getFileDescriptor();
+            mInputStream = new FileInputStream(fd);
+            mOutputStream = new FileOutputStream(fd);
+
+            updateNotification("Streaming desktop session via USB (AOA 2.0)");
+
+            // Start default display stream (1280x720 @ 60fps)
+            boolean ok = mDisplayStreamer.start(mOutputStream, 1280, 720, 160, 60, 12_000_000);
+            if (ok) {
+                mInputBridge.setTargetDisplay(mDisplayStreamer.getVirtualDisplayId(), 1280, 720);
+            }
+
+            // Start reverse tethering VPN safely
+            try {
+                ReverseTetherService.start(this, mOutputStream);
+            } catch (Throwable t) {
+                Log.w(TAG, "Failed to start ReverseTetherService: " + t.getMessage());
+            }
+
+            mIsRunning = true;
+            mReadThread = new Thread(this::readLoop, "droidOS-AoaReader");
+            mReadThread.start();
+        } catch (Throwable t) {
+            Log.e(TAG, "Fatal error in openAccessory: " + t.getMessage(), t);
+            closeAccessory();
         }
-
-        FileDescriptor fd = mFileDescriptor.getFileDescriptor();
-        mInputStream = new FileInputStream(fd);
-        mOutputStream = new FileOutputStream(fd);
-
-        updateNotification("Streaming desktop session via USB (AOA 2.0)");
-
-        // Start default display stream (1280x720 @ 60fps)
-        mDisplayStreamer.start(mOutputStream, 1280, 720, 160, 60, 12_000_000);
-        mInputBridge.setTargetDisplay(mDisplayStreamer.getVirtualDisplayId(), 1280, 720);
-
-        // Start reverse tethering VPN (routes phone network traffic over USB to host)
-        ReverseTetherService.start(this, mOutputStream);
-
-        mIsRunning = true;
-        mReadThread = new Thread(this::readLoop, "droidOS-AoaReader");
-        mReadThread.start();
     }
 
     private void readLoop() {
@@ -119,9 +142,9 @@ public class AoaAccessoryService extends Service {
 
                     handlePacket(type, flags, payload);
                 }
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 if (mIsRunning) {
-                    Log.e(TAG, "USB Read error", e);
+                    Log.w(TAG, "USB Read error: " + e.getMessage());
                 }
                 break;
             }
@@ -130,32 +153,38 @@ public class AoaAccessoryService extends Service {
     }
 
     private void handlePacket(int type, int flags, byte[] payload) {
-        if (type == 0x03) { // Mouse
-            mInputBridge.handleMousePacket(payload);
-        } else if (type == 0x04) { // Keyboard
-            mInputBridge.handleKeyboardPacket(payload);
-        } else if (type == 0x05) { // Config (resolution renegotiation)
-            if (payload.length >= 12) {
-                int w = ((payload[0] & 0xFF) << 8) | (payload[1] & 0xFF);
-                int h = ((payload[2] & 0xFF) << 8) | (payload[3] & 0xFF);
-                int dpi = ((payload[4] & 0xFF) << 8) | (payload[5] & 0xFF);
-                int fps = ((payload[6] & 0xFF) << 8) | (payload[7] & 0xFF);
-                int bitrate = ((payload[8] & 0xFF) << 24) | ((payload[9] & 0xFF) << 16) |
-                              ((payload[10] & 0xFF) << 8) | (payload[11] & 0xFF);
+        try {
+            if (type == 0x03) { // Mouse
+                mInputBridge.handleMousePacket(payload);
+            } else if (type == 0x04) { // Keyboard
+                mInputBridge.handleKeyboardPacket(payload);
+            } else if (type == 0x05) { // Config (resolution renegotiation)
+                if (payload.length >= 12) {
+                    int w = ((payload[0] & 0xFF) << 8) | (payload[1] & 0xFF);
+                    int h = ((payload[2] & 0xFF) << 8) | (payload[3] & 0xFF);
+                    int dpi = ((payload[4] & 0xFF) << 8) | (payload[5] & 0xFF);
+                    int fps = ((payload[6] & 0xFF) << 8) | (payload[7] & 0xFF);
+                    int bitrate = ((payload[8] & 0xFF) << 24) | ((payload[9] & 0xFF) << 16) |
+                                  ((payload[10] & 0xFF) << 8) | (payload[11] & 0xFF);
 
-                Log.i(TAG, "Host requested display config: " + w + "x" + h + " @" + fps + "fps");
-                mDisplayStreamer.start(mOutputStream, w, h, dpi, fps, bitrate);
-                mInputBridge.setTargetDisplay(mDisplayStreamer.getVirtualDisplayId(), w, h);
+                    Log.i(TAG, "Host requested display config: " + w + "x" + h + " @" + fps + "fps");
+                    boolean ok = mDisplayStreamer.start(mOutputStream, w, h, dpi, fps, bitrate);
+                    if (ok) {
+                        mInputBridge.setTargetDisplay(mDisplayStreamer.getVirtualDisplayId(), w, h);
+                    }
+                }
+            } else if (type == 0x06) { // Reverse Tether Network packet from Host (Mac)
+                ReverseTetherService.injectInboundPacket(payload);
             }
-        } else if (type == 0x06) { // Reverse Tether Network packet from Host (Mac)
-            ReverseTetherService.injectInboundPacket(payload);
+        } catch (Throwable t) {
+            Log.w(TAG, "Error handling packet type " + type + ": " + t.getMessage(), t);
         }
     }
 
     private synchronized void closeAccessory() {
         mIsRunning = false;
-        ReverseTetherService.stop(this);
-        mDisplayStreamer.stop();
+        try { ReverseTetherService.stop(this); } catch (Throwable ignored) {}
+        try { mDisplayStreamer.stop(); } catch (Throwable ignored) {}
 
         try {
             if (mInputStream != null) mInputStream.close();
@@ -171,14 +200,18 @@ public class AoaAccessoryService extends Service {
     }
 
     private void createNotificationChannel() {
-        NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID,
-                "droidOS AOA Service",
-                NotificationManager.IMPORTANCE_LOW
-        );
-        NotificationManager manager = getSystemService(NotificationManager.class);
-        if (manager != null) {
-            manager.createNotificationChannel(channel);
+        try {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "droidOS AOA Service",
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to createNotificationChannel: " + t.getMessage());
         }
     }
 
@@ -186,15 +219,19 @@ public class AoaAccessoryService extends Service {
         return new Notification.Builder(this, CHANNEL_ID)
                 .setContentTitle("droidOS Desktop Engine")
                 .setContentText(text)
-                .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
+                .setSmallIcon(R.drawable.ic_aoa_stat)
                 .setOngoing(true)
                 .build();
     }
 
     private void updateNotification(String text) {
-        NotificationManager manager = getSystemService(NotificationManager.class);
-        if (manager != null) {
-            manager.notify(NOTIF_ID, buildNotification(text));
+        try {
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.notify(NOTIF_ID, buildNotification(text));
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to updateNotification: " + t.getMessage());
         }
     }
 

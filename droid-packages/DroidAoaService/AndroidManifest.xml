@@ -15,8 +15,7 @@
     <uses-permission android:name="android.permission.CONTROL_VPN" />
 
     <application
-        android:label="droidOS AOA Engine"
-        android:persistent="true">
+        android:label="droidOS AOA Engine">
 
         <!-- Transparent trampoline activity matching USB accessory attachment -->
         <activity
@@ -38,10 +37,9 @@
             android:name=".AoaAccessoryService"
             android:exported="true" />
 
-        <!-- Reverse tethering VPN service -->
+        <!-- Reverse tethering VPN service (internal only) -->
         <service
             android:name=".ReverseTetherService"
-            android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.net.VpnService" />

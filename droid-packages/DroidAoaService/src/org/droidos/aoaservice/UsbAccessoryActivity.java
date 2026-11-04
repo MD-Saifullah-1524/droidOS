@@ -19,16 +19,20 @@ public class UsbAccessoryActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Intent intent = getIntent();
-        if (intent != null && intent.hasExtra(UsbManager.EXTRA_ACCESSORY)) {
-            UsbAccessory accessory = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
-            Log.i(TAG, "USB Accessory attached: " + (accessory != null ? accessory.getModel() : "unknown"));
+        try {
+            Intent intent = getIntent();
+            if (intent != null && intent.hasExtra(UsbManager.EXTRA_ACCESSORY)) {
+                UsbAccessory accessory = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+                Log.i(TAG, "USB Accessory attached: " + (accessory != null ? accessory.getModel() : "unknown"));
 
-            Intent serviceIntent = new Intent(this, AoaAccessoryService.class);
-            serviceIntent.putExtra(UsbManager.EXTRA_ACCESSORY, accessory);
-            startForegroundService(serviceIntent);
+                Intent serviceIntent = new Intent(this, AoaAccessoryService.class);
+                serviceIntent.putExtra(UsbManager.EXTRA_ACCESSORY, accessory);
+                startForegroundService(serviceIntent);
+            }
+        } catch (Throwable t) {
+            Log.e(TAG, "Error handling USB Accessory attachment: " + t.getMessage(), t);
+        } finally {
+            finish();
         }
-
-        finish();
     }
 }

@@ -9,7 +9,6 @@ import android.media.MediaFormat;
 import android.util.Log;
 import android.view.Surface;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
@@ -38,33 +37,74 @@ public class DisplayStreamer {
         mDisplayManager = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
     }
 
-    public synchronized void start(OutputStream outputStream, int width, int height, int dpi, int fps, int bitrate) {
+    public synchronized boolean start(OutputStream outputStream, int width, int height, int dpi, int fps, int bitrate) {
         if (mIsStreaming) {
             stop();
         }
 
         mOutputStream = outputStream;
-        if (width > 0) mWidth = width;
-        if (height > 0) mHeight = height;
-        if (dpi > 0) mDpi = dpi;
-        if (fps > 0) mFps = fps;
-        if (bitrate > 0) mBitrate = bitrate;
+
+        // Clamp and align dimensions to 16 pixels (required by Qualcomm hardware encoders)
+        if (width > 0) mWidth = Math.min(1920, Math.max(320, (width / 16) * 16));
+        if (height > 0) mHeight = Math.min(1080, Math.max(240, (height / 16) * 16));
+        if (dpi > 0) mDpi = Math.min(480, Math.max(120, dpi));
+        if (fps > 0) mFps = Math.min(60, Math.max(15, fps));
+        if (bitrate > 0) mBitrate = Math.min(25_000_000, Math.max(1_000_000, bitrate));
 
         Log.i(TAG, "Starting DisplayStreamer: " + mWidth + "x" + mHeight + " @" + mFps + "fps, " + mBitrate + " bps");
 
+        // Tier 1: Try requested dimensions with default (hardware) encoder
+        boolean success = tryInitCodec(mWidth, mHeight, false);
+
+        // Tier 2: If custom resolution failed, fallback to standard 1280x720 baseline
+        if (!success && (mWidth != 1280 || mHeight != 720)) {
+            Log.w(TAG, "Custom resolution failed, retrying with standard 1280x720 baseline...");
+            mWidth = 1280;
+            mHeight = 720;
+            success = tryInitCodec(1280, 720, false);
+        }
+
+        // Tier 3: If hardware encoder still failed, fallback to software Google AVC encoder
+        if (!success) {
+            Log.w(TAG, "Hardware encoder failed, falling back to software AVC encoder...");
+            success = tryInitCodec(mWidth, mHeight, true);
+        }
+
+        if (!success) {
+            Log.e(TAG, "Failed to initialize any AVC encoder. Desktop streaming aborted.");
+            stop();
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean tryInitCodec(int width, int height, boolean useSoftwareFallback) {
         try {
-            MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, mWidth, mHeight);
+            cleanupCodec();
+
+            MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
             format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
             format.setInteger(MediaFormat.KEY_BIT_RATE, mBitrate);
             format.setInteger(MediaFormat.KEY_FRAME_RATE, mFps);
             format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
-            format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR);
+            // VBR is universally supported across Qualcomm and software encoders
+            format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR);
 
-            // Low-latency tuning
-            format.setInteger(MediaFormat.KEY_LATENCY, 0);
-            format.setInteger(MediaFormat.KEY_PRIORITY, 0);
+            try {
+                format.setLong(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER, 100_000L);
+            } catch (Throwable ignored) {}
 
-            mCodec = MediaCodec.createEncoderByType(MIME_TYPE);
+            if (useSoftwareFallback) {
+                try {
+                    mCodec = MediaCodec.createByCodecName("c2.android.avc.encoder");
+                } catch (Throwable t) {
+                    mCodec = MediaCodec.createByCodecName("OMX.google.h264.encoder");
+                }
+            } else {
+                mCodec = MediaCodec.createEncoderByType(MIME_TYPE);
+            }
+
             mCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             mInputSurface = mCodec.createInputSurface();
             mCodec.start();
@@ -76,21 +116,45 @@ public class DisplayStreamer {
 
             mVirtualDisplay = mDisplayManager.createVirtualDisplay(
                     "droidOS-Desktop",
-                    mWidth,
-                    mHeight,
+                    width,
+                    height,
                     mDpi,
                     mInputSurface,
                     flags
             );
 
+            if (mVirtualDisplay == null || mVirtualDisplay.getDisplay() == null) {
+                Log.e(TAG, "DisplayManager.createVirtualDisplay returned null");
+                cleanupCodec();
+                return false;
+            }
+
             mIsStreaming = true;
             mStreamThread = new Thread(this::drainLoop, "droidOS-VideoDrain");
             mStreamThread.start();
             Log.i(TAG, "VirtualDisplay created with ID: " + mVirtualDisplay.getDisplay().getDisplayId());
+            return true;
 
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to initialize MediaCodec", e);
-            stop();
+        } catch (Throwable t) {
+            Log.w(TAG, "Codec initialization attempt failed (sw=" + useSoftwareFallback + "): " + t.getMessage());
+            cleanupCodec();
+            return false;
+        }
+    }
+
+    private void cleanupCodec() {
+        if (mVirtualDisplay != null) {
+            try { mVirtualDisplay.release(); } catch (Throwable ignored) {}
+            mVirtualDisplay = null;
+        }
+        if (mInputSurface != null) {
+            try { mInputSurface.release(); } catch (Throwable ignored) {}
+            mInputSurface = null;
+        }
+        if (mCodec != null) {
+            try { mCodec.stop(); } catch (Throwable ignored) {}
+            try { mCodec.release(); } catch (Throwable ignored) {}
+            mCodec = null;
         }
     }
 
@@ -103,35 +167,21 @@ public class DisplayStreamer {
             mStreamThread = null;
         }
 
-        if (mVirtualDisplay != null) {
-            mVirtualDisplay.release();
-            mVirtualDisplay = null;
-        }
-
-        if (mInputSurface != null) {
-            mInputSurface.release();
-            mInputSurface = null;
-        }
-
-        if (mCodec != null) {
-            try {
-                mCodec.stop();
-                mCodec.release();
-            } catch (Exception ignored) {}
-            mCodec = null;
-        }
+        cleanupCodec();
         Log.i(TAG, "DisplayStreamer stopped.");
     }
 
     public int getVirtualDisplayId() {
-        return mVirtualDisplay != null ? mVirtualDisplay.getDisplay().getDisplayId() : -1;
+        return (mVirtualDisplay != null && mVirtualDisplay.getDisplay() != null)
+                ? mVirtualDisplay.getDisplay().getDisplayId()
+                : -1;
     }
 
     private void drainLoop() {
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
         byte[] headerBuffer = new byte[8];
 
-        while (mIsStreaming) {
+        while (mIsStreaming && mCodec != null) {
             try {
                 int outIndex = mCodec.dequeueOutputBuffer(bufferInfo, 10000);
                 if (outIndex >= 0) {
@@ -144,15 +194,11 @@ public class DisplayStreamer {
                         encodedData.get(chunk);
 
                         // Build 8-byte droidOS packet header
-                        // Magic: 'D', 'O'
                         headerBuffer[0] = 'D';
                         headerBuffer[1] = 'O';
-                        // Type: 0x01 (Video)
-                        headerBuffer[2] = 0x01;
-                        // Flags: Bit 0 for keyframe
+                        headerBuffer[2] = 0x01; // Video
                         boolean isKeyFrame = (bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0;
                         headerBuffer[3] = (byte) (isKeyFrame ? 1 : 0);
-                        // Length (4 bytes big-endian)
                         int len = bufferInfo.size;
                         headerBuffer[4] = (byte) ((len >> 24) & 0xFF);
                         headerBuffer[5] = (byte) ((len >> 16) & 0xFF);
@@ -167,11 +213,13 @@ public class DisplayStreamer {
                             }
                         }
                     }
-                    mCodec.releaseOutputBuffer(outIndex, false);
+                    if (mCodec != null) {
+                        mCodec.releaseOutputBuffer(outIndex, false);
+                    }
                 }
-            } catch (Exception e) {
+            } catch (Throwable t) {
                 if (mIsStreaming) {
-                    Log.e(TAG, "Error streaming frame over USB", e);
+                    Log.w(TAG, "Video drain loop encountered error: " + t.getMessage());
                 }
                 break;
             }
