@@ -8,6 +8,9 @@
   ~ - DroidDesktop (DeX-style secondary display launcher)
   -->
 <permissions>
+    <feature name="android.software.freeform_window_management" />
+    <feature name="android.software.activities_on_secondary_displays" />
+
     <privapp-permissions package="org.droidos.controlpanel">
         <permission name="android.permission.BATTERY_STATS" />
         <permission name="android.permission.HARDWARE_TEST" />
@@ -17,15 +20,21 @@
         <permission name="android.permission.REBOOT" />
         <permission name="android.permission.SHUTDOWN" />
         <permission name="android.permission.DEVICE_POWER" />
+        <permission name="android.permission.BLUETOOTH_STACK" />
     </privapp-permissions>
 
     <privapp-permissions package="org.droidos.aoaservice">
         <permission name="android.permission.INJECT_EVENTS" />
         <permission name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+        <permission name="android.permission.ADD_TRUSTED_DISPLAY" />
+        <permission name="android.permission.START_ACTIVITIES_FROM_BACKGROUND" />
         <permission name="android.permission.CAPTURE_VIDEO_OUTPUT" />
         <permission name="android.permission.FOREGROUND_SERVICE" />
         <permission name="android.permission.MANAGE_USB" />
         <permission name="android.permission.CONTROL_VPN" />
+        <permission name="android.permission.BLUETOOTH_STACK" />
+        <permission name="android.permission.WRITE_SECURE_SETTINGS" />
+        <permission name="android.permission.WRITE_SETTINGS" />
     </privapp-permissions>
 
     <privapp-permissions package="org.droidos.desktop">
@@ -36,5 +45,7 @@
         <permission name="android.permission.QUERY_ALL_PACKAGES" />
         <permission name="android.permission.EXPAND_STATUS_BAR" />
         <permission name="android.permission.INTERACT_ACROSS_USERS" />
+        <permission name="android.permission.WRITE_SECURE_SETTINGS" />
+        <permission name="android.permission.WRITE_SETTINGS" />
     </privapp-permissions>
 </permissions>

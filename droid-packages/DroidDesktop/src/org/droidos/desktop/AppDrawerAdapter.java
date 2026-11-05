@@ -59,6 +59,10 @@ public class AppDrawerAdapter extends BaseAdapter {
             entry.icon = ri.loadIcon(pm);
 
             entry.launchIntent = pm.getLaunchIntentForPackage(entry.packageName);
+            if (entry.launchIntent == null && ri.activityInfo != null) {
+                entry.launchIntent = new Intent(Intent.ACTION_MAIN);
+                entry.launchIntent.setClassName(ri.activityInfo.packageName, ri.activityInfo.name);
+            }
             mAllApps.add(entry);
         }
 

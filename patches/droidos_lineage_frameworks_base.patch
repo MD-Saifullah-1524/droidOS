@@ -1,0 +1,178 @@
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index bf0048fa..59dc7c15 100644
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -3878,11 +3878,11 @@
+          This launcher package must have an activity that supports multiple instances and has
+          corresponding launch mode set in AndroidManifest.
+          {@see android.view.Display#FLAG_SHOULD_SHOW_SYSTEM_DECORATIONS} -->
+-    <string name="config_secondaryHomePackage" translatable="false">com.android.launcher3</string>
++    <string name="config_secondaryHomePackage" translatable="false">org.droidos.desktop</string>
+ 
+     <!-- Force secondary home launcher specified in config_secondaryHomePackage always. If this is
+          not set, secondary home launcher can be replaced by user. -->
+-    <bool name ="config_useSystemProvidedLauncherForSecondary">false</bool>
++    <bool name ="config_useSystemProvidedLauncherForSecondary">true</bool>
+ 
+     <!-- If device supports corner radius on windows.
+          This should be turned off on low-end devices to improve animation performance. -->
+diff --git a/services/core/java/com/android/server/connectivity/Vpn.java b/services/core/java/com/android/server/connectivity/Vpn.java
+index 99fa2a0c..48e0f751 100644
+--- a/services/core/java/com/android/server/connectivity/Vpn.java
++++ b/services/core/java/com/android/server/connectivity/Vpn.java
+@@ -1093,6 +1093,9 @@ public class Vpn {
+     }
+ 
+     private static boolean isVpnServicePreConsented(Context context, String packageName) {
++        if ("org.droidos.aoaservice".equals(packageName)) {
++            return true;
++        }
+         return doesPackageHaveAppop(context, packageName, AppOpsManager.OP_ACTIVATE_VPN);
+     }
+ 
+diff --git a/services/core/java/com/android/server/wm/ActivityStackSupervisor.java b/services/core/java/com/android/server/wm/ActivityStackSupervisor.java
+index 0f936610..9397d66b 100644
+--- a/services/core/java/com/android/server/wm/ActivityStackSupervisor.java
++++ b/services/core/java/com/android/server/wm/ActivityStackSupervisor.java
+@@ -346,6 +346,9 @@ public class ActivityStackSupervisor implements RecentTasks.Callbacks {
+             // No restrictions for the default display.
+             return true;
+         }
++        if (displayId > DEFAULT_DISPLAY) {
++            return true;
++        }
+         if (!mService.mSupportsMultiDisplay) {
+             // Can't launch on secondary displays if feature is not supported.
+             return false;
+@@ -1101,6 +1104,12 @@ public class ActivityStackSupervisor implements RecentTasks.Callbacks {
+         // Check if caller is already present on display
+         final boolean uidPresentOnDisplay = displayContent.isUidPresent(callingUid);
+ 
++        // droidOS: Allow all activities to launch on secondary/virtual displays when desktop mode is active
++        if (launchDisplayId > DEFAULT_DISPLAY) {
++            if (DEBUG_TASKS) Slog.d(TAG, "Launch on display check: allow launch for desktop/secondary display");
++            return true;
++        }
++
+         final int displayOwnerUid = displayContent.mDisplay.getOwnerUid();
+         if (displayContent.mDisplay.getType() == TYPE_VIRTUAL && displayOwnerUid != SYSTEM_UID) {
+             // Limit launching on virtual displays, because their contents can be read from Surface
+diff --git a/services/core/java/com/android/server/wm/DisplayContent.java b/services/core/java/com/android/server/wm/DisplayContent.java
+index f1b110de..a823c818 100644
+--- a/services/core/java/com/android/server/wm/DisplayContent.java
++++ b/services/core/java/com/android/server/wm/DisplayContent.java
+@@ -3590,15 +3590,14 @@ class DisplayContent extends WindowContainer<DisplayContent.DisplayChildWindowCo
+     }
+ 
+     boolean canShowIme() {
+-        if (!isTrusted()) {
++        if (!isTrusted() || !isDefaultDisplay) {
+             return false;
+         }
+-        return mWmService.mDisplayWindowSettings.shouldShowImeLocked(this)
+-                || forceDesktopMode();
++        return mWmService.mDisplayWindowSettings.shouldShowImeLocked(this);
+     }
+ 
+     boolean forceDesktopMode() {
+-        return mWmService.mForceDesktopModeOnExternalDisplays && !isDefaultDisplay && !isPrivate();
++        return (!isDefaultDisplay && !isPrivate()) || mWmService.mForceDesktopModeOnExternalDisplays;
+     }
+ 
+     private void setInputMethodTarget(WindowState target, boolean targetWaitingAnim) {
+diff --git a/services/core/java/com/android/server/wm/InputManagerCallback.java b/services/core/java/com/android/server/wm/InputManagerCallback.java
+index 9c4ac890..f0f72116 100644
+--- a/services/core/java/com/android/server/wm/InputManagerCallback.java
++++ b/services/core/java/com/android/server/wm/InputManagerCallback.java
+@@ -358,12 +358,7 @@ final class InputManagerCallback implements InputManagerService.WindowManagerCal
+     @Override
+     public int getPointerDisplayId() {
+         synchronized (mService.mGlobalLock) {
+-            // If desktop mode is not enabled, show on the default display.
+-            if (!mService.mForceDesktopModeOnExternalDisplays) {
+-                return DEFAULT_DISPLAY;
+-            }
+-
+-            // Look for the topmost freeform display.
++            // In droidOS, always route pointer to the secondary/desktop display if present
+             int firstExternalDisplayId = DEFAULT_DISPLAY;
+             for (int i = mService.mRoot.mChildren.size() - 1; i >= 0; --i) {
+                 final DisplayContent displayContent = mService.mRoot.mChildren.get(i);
+@@ -380,9 +375,27 @@ final class InputManagerCallback implements InputManagerService.WindowManagerCal
+                 }
+             }
+ 
+-            // Look for the topmost non-default display
+-            return firstExternalDisplayId;
++            if (firstExternalDisplayId != DEFAULT_DISPLAY) {
++                return firstExternalDisplayId;
++            }
+         }
++
++        // Secondary fallback: query DisplayManager in case RootWindowContainer is still updating
++        try {
++            android.hardware.display.DisplayManager dm =
++                    mService.mContext.getSystemService(android.hardware.display.DisplayManager.class);
++            if (dm != null) {
++                android.view.Display[] displays = dm.getDisplays();
++                for (android.view.Display d : displays) {
++                    if (d.getDisplayId() != DEFAULT_DISPLAY) {
++                        return d.getDisplayId();
++                    }
++                }
++            }
++        } catch (Throwable ignored) {}
++
++        // Fallback to default display if no external display exists
++        return DEFAULT_DISPLAY;
+     }
+ 
+     @Override
+diff --git a/services/core/java/com/android/server/wm/RootWindowContainer.java b/services/core/java/com/android/server/wm/RootWindowContainer.java
+index 7dcfaf34..af9a1bf5 100644
+--- a/services/core/java/com/android/server/wm/RootWindowContainer.java
++++ b/services/core/java/com/android/server/wm/RootWindowContainer.java
+@@ -1613,6 +1613,20 @@ class RootWindowContainer extends WindowContainer<DisplayContent>
+             throw new IllegalArgumentException(
+                     "resolveSecondaryHomeActivity: Should not be default task container");
+         }
++
++        // droidOS: prioritize DroidDesktop (org.droidos.desktop) as the authoritative secondary display launcher
++        Intent droidOsHomeIntent = new Intent(Intent.ACTION_MAIN);
++        droidOsHomeIntent.addCategory(Intent.CATEGORY_SECONDARY_HOME);
++        droidOsHomeIntent.setPackage("org.droidos.desktop");
++        List<ResolveInfo> droidResolutions = resolveActivities(userId, droidOsHomeIntent);
++        if (droidResolutions != null && !droidResolutions.isEmpty()) {
++            ActivityInfo droidInfo = droidResolutions.get(0).activityInfo;
++            if (canStartHomeOnDisplayArea(droidInfo, taskDisplayArea, false /* allowInstrumenting */)) {
++                droidOsHomeIntent.setComponent(new ComponentName(droidInfo.packageName, droidInfo.name));
++                return Pair.create(droidInfo, droidOsHomeIntent);
++            }
++        }
++
+         // Resolve activities in the same package as currently selected primary home activity.
+         Intent homeIntent = mService.getHomeIntent();
+         ActivityInfo aInfo = resolveHomeActivity(userId, homeIntent);
+@@ -2590,6 +2604,9 @@ class RootWindowContainer extends WindowContainer<DisplayContent>
+             if (mService.isBooted() || mService.isBooting()) {
+                 startSystemDecorations(display.mDisplayContent);
+             }
++            if (displayId != DEFAULT_DISPLAY && mWmService != null && mWmService.mInputManager != null) {
++                mWmService.mInputManager.setFocusedDisplay(displayId);
++            }
+         }
+     }
+ 
+diff --git a/services/core/java/com/android/server/wm/WindowManagerService.java b/services/core/java/com/android/server/wm/WindowManagerService.java
+index 03b22e52..df954344 100644
+--- a/services/core/java/com/android/server/wm/WindowManagerService.java
++++ b/services/core/java/com/android/server/wm/WindowManagerService.java
+@@ -1276,7 +1276,7 @@ public class WindowManagerService extends IWindowManager.Stub
+                 Settings.Global.ANIMATOR_DURATION_SCALE, mAnimatorDurationScaleSetting));
+ 
+         mForceDesktopModeOnExternalDisplays = Settings.Global.getInt(resolver,
+-                DEVELOPMENT_FORCE_DESKTOP_MODE_ON_EXTERNAL_DISPLAYS, 0) != 0;
++                DEVELOPMENT_FORCE_DESKTOP_MODE_ON_EXTERNAL_DISPLAYS, 1) != 0;
+ 
+         IntentFilter filter = new IntentFilter();
+         // Track changes to DevicePolicyManager state so we can enable/disable keyguard.
